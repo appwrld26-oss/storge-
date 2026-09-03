@@ -9,7 +9,12 @@ import string
 
 st.set_page_config(page_title="Ultra MyClicker Dashboard", layout="wide", page_icon="⚡")
 
-# --- 1. تحميل الشهادة والاتصال بقاعدة البيانات ---
+st.markdown("""
+    <style>
+    header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
+
 def download_ca_cert():
     cert_path = "ca-certificate.crt"
     if not os.path.exists(cert_path):
@@ -53,7 +58,6 @@ def run_query(query, params=()):
         st.error(f"حدث خطأ في قاعدة البيانات: {e}")
         return False
 
-# --- إنشاء جدول الصلاحيات إذا لم يكن موجوداً وتأمين حساب الأدمن الافتراضي ---
 def setup_permissions_table():
     try:
         cur = conn.cursor()
@@ -68,7 +72,6 @@ def setup_permissions_table():
         """)
         conn.commit()
         
-        # التأكد من وجود أدمن افتراضي
         cur.execute("SELECT COUNT(*) FROM myapp.app_permissions WHERE username = 'admin'")
         if cur.fetchone()[0] == 0:
             all_secs = [
@@ -90,9 +93,6 @@ def setup_permissions_table():
 
 setup_permissions_table()
 
-# =====================================================================
-# نظام تسجيل الدخول عبر قاعدة البيانات
-# =====================================================================
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = None
@@ -123,20 +123,15 @@ if not st.session_state.logged_in:
                 st.error(f"خطأ في عملية التحقق: {e}")
     st.stop()
 
-# زر تسجيل الخروج في الشريط الجانبي
 if st.sidebar.button("🚪 تسجيل الخروج"):
     st.session_state.logged_in = False
     st.session_state.username = None
     st.session_state.allowed_sections = []
     st.rerun()
 
-# =====================================================================
-# عرض القائمة الجانبية بناءً على الصلاحيات الممنوحة للمستخدم
-# =====================================================================
 st.sidebar.markdown(f"### ⚡ MyClicker Pro")
 st.sidebar.info(f"👤 المستخدم: {st.session_state.username}")
 
-# الأقسام المتاحة للمستخدم الموثق بناءً على صلاحياته في قاعدة البيانات
 user_allowed = st.session_state.allowed_sections
 
 if not user_allowed:
@@ -145,9 +140,6 @@ if not user_allowed:
 
 choice = st.sidebar.radio("القائمة الرئيسية:", user_allowed)
 
-# =====================================================================
-# 1. قسم إدارة المستخدمين
-# =====================================================================
 if choice == "👥 إدارة ومراقبة المستخدمين":
     st.title("👥 إدارة المستخدمين والرقابة الشاملة")
     
@@ -190,9 +182,6 @@ if choice == "👥 إدارة ومراقبة المستخدمين":
                 if run_query("UPDATE myapp.users_status SET phone = %s, status = %s WHERE device_id = %s", (new_phone, new_status, selected_device)):
                     st.success("تم تحديث بيانات المستخدم بنجاح!")
 
-# =====================================================================
-# 2. قسم توليد وإدارة الأكواد (الادمن)
-# =====================================================================
 elif choice == "🎫 توليد وإدارة الأكواد (الادمن)":
     st.title("🎫 لوحة توليد وإدارة الأكواد الشاملة (الادمن)")
     
@@ -241,9 +230,6 @@ elif choice == "🎫 توليد وإدارة الأكواد (الادمن)":
     with tab_used:
         st.dataframe(used_codes[['code', 'used_by_device', 'used_at', 'sub_type']], use_container_width=True)
 
-# =====================================================================
-# 3. قسم الشركاء (الموزعين)
-# =====================================================================
 elif choice == "🤝 قسم الشركاء (الموزعين)":
     st.title("🤝 لوحة الشركاء والموزعين")
     st.info("متابعة الأكواد المتاحة والأكواد المفعلة مع أجهزة المستخدمين بكل شفافية.")
@@ -275,9 +261,6 @@ elif choice == "🤝 قسم الشركاء (الموزعين)":
         else:
             st.info("لم يتم تفعيل أي كود حتى الآن.")
 
-# =====================================================================
-# 4. قسم تحليل البيانات
-# =====================================================================
 elif choice == "📈 تحليل البيانات":
     st.title("📈 تحليل البيانات وأوقات الذروة")
     query_orders = "SELECT order_time, price FROM myapp.accepted_orders"
@@ -294,9 +277,6 @@ elif choice == "📈 تحليل البيانات":
     except Exception as e:
         st.info(f"عذراً، لم نتمكن من قراءة جدول الطلبات: {e}")
 
-# =====================================================================
-# 5. قسم حالة السيرفر
-# =====================================================================
 elif choice == "🖥️ حالة السيرفر":
     st.title("🖥️ مراقبة السيرفر")
     c1, c2 = st.columns(2)
@@ -304,9 +284,6 @@ elif choice == "🖥️ حالة السيرفر":
     c2.metric("حالة الشهادة الأمنية (SSL)", "مفعلة ومحمية 🔒")
     st.info("هذا السيرفر مرتبط بنظام Node.js (MyClicker Pro Ultra) ويعمل في الوقت الفعلي.")
 
-# =====================================================================
-# 6. قسم إدارة الصلاحيات والتحكم
-# =====================================================================
 elif choice == "🔐 إدارة الصلاحيات والتحكم":
     st.title("🔐 إدارة حسابات المستخدمين وصلاحيات الأقسام")
     st.info("من هنا يمكنك إضافة مستخدمين جدد (مثل الشركاء أو الموظفين) وتحديد الأقسام المسموح لهم برؤيتها فقط.")
