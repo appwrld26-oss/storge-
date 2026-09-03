@@ -9,6 +9,13 @@ import string
 
 st.set_page_config(page_title="Ultra MyClicker Dashboard", layout="wide", page_icon="⚡")
 
+# إخفاء شريط الأدوات العلوي (Share, Star, GitHub, 3 dots)
+st.markdown("""
+    <style>
+    header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
+
 # --- 1. تحميل الشهادة والاتصال بقاعدة البيانات ---
 def download_ca_cert():
     cert_path = "ca-certificate.crt"
@@ -136,7 +143,6 @@ if st.sidebar.button("🚪 تسجيل الخروج"):
 st.sidebar.markdown(f"### ⚡ MyClicker Pro")
 st.sidebar.info(f"👤 المستخدم: {st.session_state.username}")
 
-# الأقسام المتاحة للمستخدم الموثق بناءً على صلاحياته في قاعدة البيانات
 user_allowed = st.session_state.allowed_sections
 
 if not user_allowed:
